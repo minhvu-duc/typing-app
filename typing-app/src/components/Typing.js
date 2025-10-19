@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { words as wordList } from '../words';
 import { cn } from '../lib/utils';
 
@@ -13,9 +13,21 @@ const Typing = () => {
   const [incorrectWords, setIncorrectWords] = useState([]);
   const inputRef = useRef(null);
 
+  const generateWords = useCallback(() => {
+    const randomWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 50);
+    setWords(randomWords);
+  }, []);
+
+  const endTest = useCallback(() => {
+    setStatus('finished');
+    const wpm = correctWords.length;
+    const accuracy = Math.round((correctWords.length / (correctWords.length + incorrectWords.length)) * 100) || 0;
+    setResults({ wpm, accuracy });
+  }, [correctWords, incorrectWords]);
+
   useEffect(() => {
     generateWords();
-  }, []);
+  }, [generateWords]);
 
   useEffect(() => {
     if (status === 'running') {
@@ -31,14 +43,9 @@ const Typing = () => {
     if (timeLeft === 0) {
       endTest();
     }
-  }, [status, timeLeft]);
+  }, [status, timeLeft, endTest]);
 
-  const generateWords = () => {
-    const randomWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 50);
-    setWords(randomWords);
-  };
-
-  const startTest = () => {
+  const startTest = useCallback(() => {
     setStatus('running');
     setTimeLeft(60);
     setCurrentWordIndex(0);
@@ -46,14 +53,7 @@ const Typing = () => {
     setCorrectWords([]);
     setIncorrectWords([]);
     generateWords();
-  };
-
-  const endTest = () => {
-    setStatus('finished');
-    const wpm = correctWords.length;
-    const accuracy = Math.round((correctWords.length / (correctWords.length + incorrectWords.length)) * 100) || 0;
-    setResults({ wpm, accuracy });
-  };
+  }, [generateWords]);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -72,11 +72,12 @@ const Typing = () => {
       }
 
       if (currentWordIndex === words.length - 1) {
-        endTest();
+        generateWords();
+        setCurrentWordIndex(0);
       } else {
         setCurrentWordIndex(currentWordIndex + 1);
-        setInputValue('');
       }
+      setInputValue('');
     }
   };
 
@@ -125,7 +126,7 @@ const Typing = () => {
           ))}
         </div>
         <input
-          ref={inputRef}
+          ref={input-Ref}
           type="text"
           value={inputValue}
           onChange={handleInputChange}
